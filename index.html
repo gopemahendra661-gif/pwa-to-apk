@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website to APK Converter</title>
+<style>
+body{font-family:sans-serif;text-align:center;padding:50px;background:#141E30;color:white;}
+input,button{padding:10px;margin:5px;border-radius:8px;border:none;}
+button{background:#00c6ff;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>🌐 Website to APK Converter</h1>
+<input type="url" id="url" placeholder="अपनी वेबसाइट का URL डालें" size="40">
+<button onclick="convert()">Convert</button>
+<p id="result"></p>
+
+<script>
+function convert(){
+  const url = document.getElementById('url').value.trim();
+  if(!url){alert("कृपया URL डालें!"); return;}
+  document.getElementById('result').innerHTML = "⏳ Workflow trigger हो रहा है...";
+
+  const workflowURL = `https://api.github.com/repos/<your-username>/pwa-to-apk/actions/workflows/build-apk.yml/dispatches`;
+
+  fetch(workflowURL, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/vnd.github+json',
+      'Authorization': 'token <YOUR_PERSONAL_ACCESS_TOKEN>',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ref: "main",
+      inputs: { manifest: url + "/manifest.json" }
+    })
+  })
+  .then(res => {
+    if(res.ok){
+      document.getElementById('result').innerHTML =
+        "✅ Workflow triggered! कुछ मिनटों में Actions → Artifacts से APK डाउनलोड करें।";
+    } else {
+      document.getElementById('result').innerText = "❌ Error triggering workflow";
+    }
+  })
+  .catch(()=> document.getElementById('result').innerText = "⚠️ Network Error");
+}
+</script>
+</body>
+</html>
