@@ -22,26 +22,20 @@ function convert(){
   if(!url){alert("कृपया URL डालें!"); return;}
   document.getElementById('result').innerHTML = "⏳ Workflow trigger हो रहा है...";
 
-  const workflowURL = `https://api.github.com/repos/<your-username>/pwa-to-apk/actions/workflows/build-apk.yml/dispatches`;
-
-  fetch(workflowURL, {
+  // ⚠️ Direct token in frontend is unsafe
+  // इस जगह आप server-side proxy use करें जो token secretly handle करे
+  fetch('/trigger-workflow', {
     method: 'POST',
-    headers: {
-      'Accept': 'application/vnd.github+json',
-      'Authorization': 'token <YOUR_PERSONAL_ACCESS_TOKEN>',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      ref: "main",
-      inputs: { manifest: url + "/manifest.json" }
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ manifest: url + "/manifest.json" })
   })
-  .then(res => {
-    if(res.ok){
-      document.getElementById('result').innerHTML =
-        "✅ Workflow triggered! कुछ मिनटों में Actions → Artifacts से APK डाउनलोड करें।";
+  .then(res => res.json())
+  .then(data => {
+    if(data.success){
+      document.getElementById('result').innerHTML = 
+        "✅ Workflow triggered! GitHub Actions → Artifacts से APK डाउनलोड करें।";
     } else {
-      document.getElementById('result').innerText = "❌ Error triggering workflow";
+      document.getElementById('result').innerText = "❌ Error: "+data.error;
     }
   })
   .catch(()=> document.getElementById('result').innerText = "⚠️ Network Error");
