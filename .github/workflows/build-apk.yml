@@ -1,0 +1,54 @@
+name: Build APK with Bubblewrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: 'Manifest URL (https://...)'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Install Android Command Line Tools
+        run: |
+          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
+          curl -o cmdline.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          sudo unzip cmdline.zip -d /usr/lib/android-sdk/cmdline-tools
+          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          yes | /usr/lib/android-sdk/cmdline-tools/tools/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Initialize Bubblewrap Project
+        run: |
+          mkdir out && cd out
+          bubblewrap init --manifest=${{ github.event.inputs.manifest }} --packageId=com.example.generated --applicationId=com.example.generated --skipPwaValidation
+
+      - name: Build APK
+        run: |
+          cd out
+          bubblewrap build
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: out/app-release-signed.apk
